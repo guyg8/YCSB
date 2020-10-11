@@ -26,6 +26,7 @@ public class RandomByteIterator extends ByteIterator {
   private long off;
   private int bufOff;
   private final byte[] buf;
+  private long nonZeroLen;
 
   @Override
   public boolean hasNext() {
@@ -34,20 +35,15 @@ public class RandomByteIterator extends ByteIterator {
 
   private void fillBytesImpl(byte[] buffer, int base) {
     int bytes = ThreadLocalRandom.current().nextInt();
-
     switch (buffer.length - base) {
     default:
-      buffer[base + 5] = (byte) (((bytes >> 25) & 95) + ' ');
-    case 5:
-      buffer[base + 4] = (byte) (((bytes >> 20) & 63) + ' ');
-    case 4:
-      buffer[base + 3] = (byte) (((bytes >> 15) & 31) + ' ');
+      buffer[base + 3] = (byte) ((bytes >> 24) & 255);
     case 3:
-      buffer[base + 2] = (byte) (((bytes >> 10) & 95) + ' ');
+      buffer[base + 2] = (byte) ((bytes >> 16) & 255);
     case 2:
-      buffer[base + 1] = (byte) (((bytes >> 5) & 63) + ' ');
+      buffer[base + 1] = (byte) ((bytes >> 8) & 255);
     case 1:
-      buffer[base + 0] = (byte) (((bytes) & 31) + ' ');
+      buffer[base + 0] = (byte) ((bytes) & 255);
     case 0:
       break;
     }
@@ -61,15 +57,20 @@ public class RandomByteIterator extends ByteIterator {
     }
   }
 
-  public RandomByteIterator(long len) {
+  public RandomByteIterator(long len, double compressibilityFactor) {
     this.len = len;
-    this.buf = new byte[6];
+    this.buf = new byte[4];
     this.bufOff = buf.length;
+    this.nonZeroLen = (int) (compressibilityFactor*len);
     fillBytes();
     this.off = 0;
   }
 
   public byte nextByte() {
+    if (off+bufOff >= nonZeroLen){
+      off++;
+      return 0;
+    }
     fillBytes();
     bufOff++;
     return buf[bufOff - 1];
@@ -78,13 +79,13 @@ public class RandomByteIterator extends ByteIterator {
   @Override
   public int nextBuf(byte[] buffer, int bufOffset) {
     int ret;
-    if (len - off < buffer.length - bufOffset) {
-      ret = (int) (len - off);
+    if (bytesLeft() < buffer.length - bufOffset) {
+      ret = (int) (bytesLeft());
     } else {
       ret = buffer.length - bufOffset;
     }
     int i;
-    for (i = 0; i < ret; i += 6) {
+    for (i = 0; i < ret; i += 4) {
       fillBytesImpl(buffer, i + bufOffset);
     }
     off += ret;
@@ -109,6 +110,10 @@ public class RandomByteIterator extends ByteIterator {
     }
     byte[] ret = new byte[(int) left];
     int bufOffset = 0;
+    while (bufOffset < len - nonZeroLen) {
+      ret[bufOffset] = 0;
+      bufOffset++;
+    }
     while (bufOffset < ret.length) {
       bufOffset = nextBuf(ret, bufOffset);
     }

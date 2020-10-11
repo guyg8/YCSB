@@ -287,7 +287,8 @@ public class RestWorkload extends CoreWorkload {
   public void doTransactionInsert(DB db) {
     HashMap<String, ByteIterator> value = new HashMap<String, ByteIterator>();
     // Create random bytes of insert data with a specific size.
-    value.put("data", new RandomByteIterator(fieldlengthgenerator.nextValue().longValue()));
+    double fake = 0;  // for quick and dirty RandomByteIterator modification
+    value.put("data", new RandomByteIterator(fieldlengthgenerator.nextValue().longValue(), fake));
     db.insert(null, getNextURL(2), value);
   }
 
@@ -298,8 +299,9 @@ public class RestWorkload extends CoreWorkload {
   @Override
   public void doTransactionUpdate(DB db) {
     HashMap<String, ByteIterator> value = new HashMap<String, ByteIterator>();
+    double fake = 0;  // for quick and dirty RandomByteIterator modification
     // Create random bytes of update data with a specific size.
-    value.put("data", new RandomByteIterator(fieldlengthgenerator.nextValue().longValue()));
+    value.put("data", new RandomByteIterator(fieldlengthgenerator.nextValue().longValue(), fake));
     db.update(null, getNextURL(4), value);
   }
 

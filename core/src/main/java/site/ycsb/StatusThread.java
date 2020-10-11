@@ -178,7 +178,8 @@ public class StatusThread extends Thread {
 
     System.err.println(msg);
 
-    if (standardstatus) {
+    //if (standardstatus) {
+    if (true) {
       System.out.println(msg);
     }
     return totalops;

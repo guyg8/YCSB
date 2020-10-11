@@ -79,6 +79,16 @@ public class CoreWorkload extends Workload {
   protected String table;
 
   /**
+   * The name of the property for the compressibility in percent .
+   */
+  public static final String COMPRESSIBILITY_FACTOR_PERCENT = "compressibilityFactorPercent";
+
+  /**
+   * Default number of compressibility in percent .
+   */
+  public static final String COMPRESSIBILITY_FACTOR_PERCENT_PROPERTY_DEFAULT = "100";
+
+  /**
    * The name of the property for the number of fields in a record.
    */
   public static final String FIELD_COUNT_PROPERTY = "fieldcount";
@@ -348,6 +358,7 @@ public class CoreWorkload extends Workload {
   protected AcknowledgedCounterGenerator transactioninsertkeysequence;
   protected NumberGenerator scanlength;
   protected boolean orderedinserts;
+  protected long compressibilityFactorPercent;
   protected long fieldcount;
   protected long recordcount;
   protected int zeropadding;
@@ -394,6 +405,8 @@ public class CoreWorkload extends Workload {
   public void init(Properties p) throws WorkloadException {
     table = p.getProperty(TABLENAME_PROPERTY, TABLENAME_PROPERTY_DEFAULT);
 
+    compressibilityFactorPercent =
+        Long.parseLong(p.getProperty(COMPRESSIBILITY_FACTOR_PERCENT, COMPRESSIBILITY_FACTOR_PERCENT_PROPERTY_DEFAULT));
     fieldcount =
         Long.parseLong(p.getProperty(FIELD_COUNT_PROPERTY, FIELD_COUNT_PROPERTY_DEFAULT));
     final String fieldnameprefix = p.getProperty(FIELD_NAME_PREFIX, FIELD_NAME_PREFIX_DEFAULT);
@@ -539,7 +552,8 @@ public class CoreWorkload extends Workload {
       data = new StringByteIterator(buildDeterministicValue(key, fieldkey));
     } else {
       // fill with random data
-      data = new RandomByteIterator(fieldlengthgenerator.nextValue().longValue());
+      double compressibilityFactor = ((double) compressibilityFactorPercent)/100;
+      data = new RandomByteIterator(fieldlengthgenerator.nextValue().longValue(), compressibilityFactor);
     }
     value.put(fieldkey, data);
 
@@ -558,7 +572,8 @@ public class CoreWorkload extends Workload {
         data = new StringByteIterator(buildDeterministicValue(key, fieldkey));
       } else {
         // fill with random data
-        data = new RandomByteIterator(fieldlengthgenerator.nextValue().longValue());
+        double compressibilityFactor = ((double) compressibilityFactorPercent)/100;
+        data = new RandomByteIterator(fieldlengthgenerator.nextValue().longValue(), compressibilityFactor);
       }
       values.put(fieldkey, data);
     }
